@@ -32,28 +32,15 @@ except Exception:
 
 # Create Network and Compute API clients based on Instance Principle authentication
 virtual_network_client = oci.core.VirtualNetworkClient(config, signer=signer)
-compute_client = oci.core.ComputeClient(config, signer=signer)
 
 def get_instance_metadata():
-    metadata_url = "http://169.254.169.254/opc/v2/instance/"
+    metadata_url = "http://169.254.169.254/opc/v2/nvics/"
     headers = {"Authorization": "Bearer Oracle"}
     response = requests.get(metadata_url, headers=headers)
     if response.status_code == 200:
         return response.json()
     else:
         response.raise_for_status()
-
-def get_vnics_from_instance(instance_ocid, compartment_id):
-    vnics = []
-    try:
-        vnic_attachments = compute_client.list_vnic_attachments(compartment_id=compartment_id, instance_id=instance_ocid).data
-        for vnic_attachment in vnic_attachments:
-            vnic = virtual_network_client.get_vnic(vnic_attachment.vnic_id).data
-            vnics.append(vnic)
-    except oci.exceptions.ServiceError as e:
-        print(f"Error retrieving VNICs: {e}")
-    return vnics
-
 
 def claim_ip_as_secondary(ip_address, vnic_id):
 
@@ -78,7 +65,7 @@ def claim_ip_as_secondary(ip_address, vnic_id):
     virtual_network_client.create_private_ip(create_private_ip_details)
 
 meta = get_instance_metadata()  # Retrieve instance meta data from OCI control plane
-vnics = get_vnics_from_instance(instance_ocid=meta['id'], compartment_id=meta['compartmentId'])  # Get the VNICs attached to this Instance
-claim_ip_as_secondary(ip_address=claimIP, vnic_id=vnics[0].id) # Claim the provided IP addess to the first attached VNIC
+vnic = meta[0]  # Get primary vnic 
+claim_ip_as_secondary(ip_address=claimIP, vnic_id=vnic['vnicId']) # Claim the provided IP addess to the first attached VNIC
 
 print ("{} has been claimed".format(claimIP))
