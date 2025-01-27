@@ -34,7 +34,7 @@ except Exception:
 virtual_network_client = oci.core.VirtualNetworkClient(config, signer=signer)
 
 def get_instance_metadata():
-    metadata_url = "http://169.254.169.254/opc/v2/nvics/"
+    metadata_url = "http://169.254.169.254/opc/v2/vnics/"
     headers = {"Authorization": "Bearer Oracle"}
     response = requests.get(metadata_url, headers=headers)
     if response.status_code == 200:
